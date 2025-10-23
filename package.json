@@ -29,45 +29,78 @@
       "import": "./es/index.js",
       "require": "./lib/index.cjs"
     },
+    "./core": {
+      "types": "./es/core/index.d.ts",
+      "import": "./es/core/index.js",
+      "require": "./lib/core/index.cjs"
+    },
+    "./core/*": {
+      "types": "./es/core/*.d.ts",
+      "import": "./es/core/*.js",
+      "require": "./lib/core/*.cjs"
+    },
     "./rules": {
       "types": "./es/rules/index.d.ts",
       "import": "./es/rules/index.js",
       "require": "./lib/rules/index.cjs"
+    },
+    "./rules/*": {
+      "types": "./es/rules/*.d.ts",
+      "import": "./es/rules/*.js",
+      "require": "./lib/rules/*.cjs"
     },
     "./schema": {
       "types": "./es/schema/index.d.ts",
       "import": "./es/schema/index.js",
       "require": "./lib/schema/index.cjs"
     },
+    "./schema/*": {
+      "types": "./es/schema/*.d.ts",
+      "import": "./es/schema/*.js",
+      "require": "./lib/schema/*.cjs"
+    },
     "./types": {
       "types": "./es/types/index.d.ts",
       "import": "./es/types/index.js",
       "require": "./lib/types/index.cjs"
+    },
+    "./types/*": {
+      "types": "./es/types/*.d.ts",
+      "import": "./es/types/*.js",
+      "require": "./lib/types/*.cjs"
+    },
+    "./utils/*": {
+      "types": "./es/utils/*.d.ts",
+      "import": "./es/utils/*.js",
+      "require": "./lib/utils/*.cjs"
     }
   },
   "main": "./lib/index.cjs",
   "module": "./es/index.js",
   "types": "./es/index.d.ts",
+  "unpkg": "./dist/index.min.js",
+  "jsdelivr": "./dist/index.min.js",
   "files": [
     "README.md",
     "LICENSE",
-    "CHANGELOG.md",
     "package.json",
     "es",
-    "lib"
+    "lib",
+    "dist"
   ],
   "scripts": {
-    "build": "ldesign-builder build -f esm,cjs,dts",
-    "dev": "ldesign-builder watch",
+    "build": "ldesign-builder build",
+    "build:watch": "ldesign-builder build --watch",
+    "dev": "ldesign-builder build --mode development --watch",
+    "clean": "rimraf es lib coverage",
+    "prepublishOnly": "pnpm run clean && pnpm run build",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "clean": "rimraf es lib coverage",
-    "prepublishOnly": "pnpm run clean && pnpm run build"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@ldesign/i18n": "workspace:*",
@@ -85,9 +118,3 @@
     "vitest": "^2.0.0"
   }
 }
-
-
-
-
-
-
