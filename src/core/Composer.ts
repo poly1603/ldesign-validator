@@ -38,9 +38,9 @@ export class RuleComposer<T = any> {
       name: 'required',
       validator: message
         ? (value, context) => {
-            const result = rules.required(value, context)
-            return result.valid ? result : { ...result, message }
-          }
+          const result = rules.required(value, context)
+          return result.valid ? result : { ...result, message }
+        }
         : rules.required,
     })
     return this
@@ -56,9 +56,9 @@ export class RuleComposer<T = any> {
       name: 'email',
       validator: message
         ? (value, context) => {
-            const result = rules.email(value, context)
-            return result.valid ? result : { ...result, message }
-          }
+          const result = rules.email(value, context)
+          return result.valid ? result : { ...result, message }
+        }
         : rules.email,
     })
     return this
@@ -74,9 +74,9 @@ export class RuleComposer<T = any> {
       name: 'url',
       validator: message
         ? (value, context) => {
-            const result = rules.url(value, context)
-            return result.valid ? result : { ...result, message }
-          }
+          const result = rules.url(value, context)
+          return result.valid ? result : { ...result, message }
+        }
         : rules.url,
     })
     return this
@@ -92,9 +92,9 @@ export class RuleComposer<T = any> {
       name: 'phone',
       validator: message
         ? (value, context) => {
-            const result = rules.phone(value, context)
-            return result.valid ? result : { ...result, message }
-          }
+          const result = rules.phone(value, context)
+          return result.valid ? result : { ...result, message }
+        }
         : rules.phone,
     })
     return this
