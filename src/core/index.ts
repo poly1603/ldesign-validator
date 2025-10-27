@@ -13,6 +13,11 @@ export type { PoolOptions } from './Pool'
 
 export { RuleRegistry, registerBuiltInRules } from './RuleRegistry'
 
+export { Transformer, createTransformer, transformers } from './Transformer'
+export type { TransformFunction } from './Transformer'
+
+export { RuleComposer, compose, presets } from './Composer'
+
 
 
 

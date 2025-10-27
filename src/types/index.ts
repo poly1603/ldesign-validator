@@ -132,9 +132,25 @@ export interface SchemaRule {
   message?: string
 
   /**
-   * 子 Schema（用于对象和数组）
+   * 子 Schema（用于对象）
    */
   schema?: Schema
+
+  /**
+   * 数组元素验证规则
+   */
+  items?: SchemaRule
+
+  /**
+   * 数据转换
+   * 可以是转换器名称数组或自定义转换函数
+   */
+  transform?: string[] | ((value: any) => any)
+
+  /**
+   * 默认值
+   */
+  default?: any
 }
 
 /**

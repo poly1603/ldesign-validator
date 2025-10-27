@@ -17,6 +17,9 @@ export * from './types'
 // 高级规则
 export * from './advanced'
 
+// 跨字段验证规则
+export * from './cross-field'
+
 
 
 

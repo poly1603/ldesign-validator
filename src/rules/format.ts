@@ -788,6 +788,279 @@ export const uppercase: ValidatorFunction<string> = (value) => {
   }
 }
 
+/**
+ * 域名验证
+ * 验证标准域名格式（支持子域名）
+ */
+export const domain: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  // 域名正则：支持子域名、国际化域名
+  const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i
+  const valid = domainRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : '请输入有效的域名',
+    code: 'INVALID_DOMAIN',
+  }
+}
+
+/**
+ * URL slug 验证
+ * 验证 URL 友好的字符串（小写字母、数字、连字符）
+ */
+export const slug: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+  const valid = slugRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : 'URL slug 格式不正确（只能包含小写字母、数字和连字符）',
+    code: 'INVALID_SLUG',
+  }
+}
+
+/**
+ * 语义化版本验证（Semver）
+ * 验证符合 semver 规范的版本号（如 1.0.0, 2.1.3-beta.1）
+ */
+export const semver: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+  const valid = semverRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : '请输入有效的语义化版本号（如 1.0.0）',
+    code: 'INVALID_SEMVER',
+  }
+}
+
+/**
+ * MongoDB ObjectId 验证
+ * 验证 24 位十六进制字符串
+ */
+export const mongoId: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  const mongoIdRegex = /^[a-f\d]{24}$/i
+  const valid = mongoIdRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : '请输入有效的 MongoDB ObjectId',
+    code: 'INVALID_MONGO_ID',
+  }
+}
+
+/**
+ * 纬度验证
+ * 验证纬度值（-90 到 90）
+ */
+export const latitude: ValidatorFunction<number | string> = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return { valid: true }
+  }
+
+  const numValue = Number(value)
+  const valid = !Number.isNaN(numValue) && numValue >= -90 && numValue <= 90
+
+  return {
+    valid,
+    message: valid ? undefined : '纬度必须在 -90 到 90 之间',
+    code: 'INVALID_LATITUDE',
+  }
+}
+
+/**
+ * 经度验证
+ * 验证经度值（-180 到 180）
+ */
+export const longitude: ValidatorFunction<number | string> = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return { valid: true }
+  }
+
+  const numValue = Number(value)
+  const valid = !Number.isNaN(numValue) && numValue >= -180 && numValue <= 180
+
+  return {
+    valid,
+    message: valid ? undefined : '经度必须在 -180 到 180 之间',
+    code: 'INVALID_LONGITUDE',
+  }
+}
+
+/**
+ * 文件扩展名验证
+ * 验证文件名是否具有指定的扩展名
+ * 
+ * @param extensions 允许的扩展名数组（不带点号）
+ * @param message 自定义错误消息
+ * @returns 验证器函数
+ * 
+ * @example
+ * ```typescript
+ * const validator = createValidator<string>()
+ *   .rule({ validator: rules.fileExtension(['jpg', 'png', 'gif']) })
+ * 
+ * await validator.validate('photo.jpg') // 通过
+ * await validator.validate('document.pdf') // 失败
+ * ```
+ */
+export function fileExtension(extensions: string[], message?: string): ValidatorFunction<string> {
+  return (value) => {
+    if (!value) {
+      return { valid: true }
+    }
+
+    const ext = value.toLowerCase().split('.').pop()
+    const valid = ext ? extensions.map(e => e.toLowerCase()).includes(ext) : false
+
+    return {
+      valid,
+      message: valid ? undefined : message || `文件扩展名必须是 ${extensions.join(', ')} 之一`,
+      code: 'INVALID_FILE_EXTENSION',
+      meta: { extensions, actualExt: ext },
+    }
+  }
+}
+
+/**
+ * MIME 类型验证
+ * 验证 MIME 类型字符串
+ * 
+ * @param types 允许的 MIME 类型数组
+ * @param message 自定义错误消息
+ * @returns 验证器函数
+ * 
+ * @example
+ * ```typescript
+ * const validator = createValidator<string>()
+ *   .rule({ validator: rules.mimeType(['image/jpeg', 'image/png', 'image/gif']) })
+ * 
+ * await validator.validate('image/jpeg') // 通过
+ * await validator.validate('application/pdf') // 失败
+ * ```
+ */
+export function mimeType(types: string[], message?: string): ValidatorFunction<string> {
+  return (value) => {
+    if (!value) {
+      return { valid: true }
+    }
+
+    const valid = types.includes(value.toLowerCase())
+
+    return {
+      valid,
+      message: valid ? undefined : message || `MIME 类型必须是 ${types.join(', ')} 之一`,
+      code: 'INVALID_MIME_TYPE',
+      meta: { types, actualType: value },
+    }
+  }
+}
+
+/**
+ * ISO 639 语言代码验证
+ * 验证两位或三位语言代码（如 en, zh, en-US）
+ */
+export const languageCode: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  // 支持 ISO 639-1 (两位) 和 ISO 639-2 (三位)，以及地区代码
+  const languageCodeRegex = /^[a-z]{2,3}(?:-[A-Z]{2})?$/
+  const valid = languageCodeRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : '请输入有效的语言代码（如 en, zh, en-US）',
+    code: 'INVALID_LANGUAGE_CODE',
+  }
+}
+
+/**
+ * ISO 3166 国家代码验证
+ * 验证两位国家代码（如 CN, US, UK）
+ */
+export const countryCode: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  const countryCodeRegex = /^[A-Z]{2}$/
+  const valid = countryCodeRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : '请输入有效的国家代码（两位大写字母，如 CN, US）',
+    code: 'INVALID_COUNTRY_CODE',
+  }
+}
+
+/**
+ * ISO 4217 货币代码验证
+ * 验证三位货币代码（如 CNY, USD, EUR）
+ */
+export const currencyCode: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  const currencyCodeRegex = /^[A-Z]{3}$/
+  const valid = currencyCodeRegex.test(value)
+
+  return {
+    valid,
+    message: valid ? undefined : '请输入有效的货币代码（三位大写字母，如 CNY, USD）',
+    code: 'INVALID_CURRENCY_CODE',
+  }
+}
+
+/**
+ * Cron 表达式验证（简化版）
+ * 验证基本的 5 段式或 6 段式 cron 表达式
+ */
+export const cron: ValidatorFunction<string> = (value) => {
+  if (!value) {
+    return { valid: true }
+  }
+
+  const parts = value.trim().split(/\s+/)
+
+  // 支持 5 段式（分 时 日 月 周）或 6 段式（秒 分 时 日 月 周）
+  if (parts.length !== 5 && parts.length !== 6) {
+    return {
+      valid: false,
+      message: 'Cron 表达式必须是 5 段或 6 段格式',
+      code: 'INVALID_CRON',
+    }
+  }
+
+  // 简单验证每个字段是否包含有效字符
+  const cronFieldRegex = /^[0-9,\-*/]+$/
+  const allValid = parts.every(part => cronFieldRegex.test(part))
+
+  return {
+    valid: allValid,
+    message: allValid ? undefined : 'Cron 表达式格式不正确',
+    code: 'INVALID_CRON',
+  }
+}
+
 
 
 

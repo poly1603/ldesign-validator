@@ -1,32 +1,90 @@
 import type { Schema, SchemaRule, SchemaValidationResult, ValidationError, ValidationContext } from '../types'
 import * as rules from '../rules'
+import { type Transformer, createTransformer } from '../core/Transformer'
+
+/**
+ * Schema 验证器选项
+ */
+export interface SchemaValidatorOptions {
+  /**
+   * 是否在第一个错误时停止验证
+   * @default false
+   */
+  stopOnFirstError?: boolean
+
+  /**
+   * 是否自动转换数据
+   * @default false
+   */
+  autoTransform?: boolean
+}
 
 /**
  * Schema 验证器
+ * 用于验证对象数据结构，支持转换器、数组元素验证等高级功能
+ * 
+ * @example
+ * ```typescript
+ * const schema = {
+ *   email: {
+ *     type: 'email',
+ *     required: true,
+ *     transform: ['trim', 'toLowerCase']
+ *   },
+ *   tags: {
+ *     type: 'array',
+ *     items: { type: 'string', minLength: 2 }
+ *   }
+ * }
+ * 
+ * const validator = createSchemaValidator(schema, { autoTransform: true })
+ * const result = await validator.validate({ email: '  USER@EXAMPLE.COM  ', tags: ['vue', 'react'] })
+ * ```
  */
 export class SchemaValidator {
   private schema: Schema
+  private options: SchemaValidatorOptions
 
-  constructor(schema: Schema) {
+  constructor(schema: Schema, options: SchemaValidatorOptions = {}) {
     this.schema = schema
+    this.options = {
+      stopOnFirstError: options.stopOnFirstError ?? false,
+      autoTransform: options.autoTransform ?? false,
+    }
   }
 
   /**
    * 验证数据
+   * @param data 要验证的数据对象
+   * @param context 验证上下文
+   * @returns 验证结果
    */
   async validate(data: Record<string, any>, context?: ValidationContext): Promise<SchemaValidationResult> {
     const errors: ValidationError[] = []
     const errorMap: Record<string, ValidationError[]> = {}
+    const transformedData = { ...data }
 
     for (const [field, ruleOrRules] of Object.entries(this.schema)) {
       const fieldRules = Array.isArray(ruleOrRules) ? ruleOrRules : [ruleOrRules]
-      const value = data[field]
+      let value = data[field]
 
       for (const rule of fieldRules) {
+        // 应用默认值
+        if (value === undefined && rule.default !== undefined) {
+          value = rule.default
+          transformedData[field] = value
+        }
+
+        // 应用数据转换
+        if (this.options.autoTransform && rule.transform) {
+          value = this.applyTransform(value, rule.transform)
+          transformedData[field] = value
+        }
+
         const result = await this.validateField(field, value, rule, {
           ...context,
           field,
-          formData: data,
+          formData: transformedData,
         })
 
         if (!result.valid) {
@@ -44,6 +102,15 @@ export class SchemaValidator {
           }
           errorMap[field].push(error)
 
+          // 如果设置了停止选项，立即返回
+          if (this.options.stopOnFirstError) {
+            return {
+              valid: false,
+              errors,
+              errorMap,
+            }
+          }
+
           // 遇到错误停止验证该字段
           break
         }
@@ -55,6 +122,59 @@ export class SchemaValidator {
       errors,
       errorMap,
     }
+  }
+
+  /**
+   * 应用数据转换
+   * @param value 原始值
+   * @param transform 转换配置
+   * @returns 转换后的值
+   */
+  private applyTransform(value: any, transform: string[] | ((value: any) => any)): any {
+    // 如果是自定义函数，直接调用
+    if (typeof transform === 'function') {
+      return transform(value)
+    }
+
+    // 如果是转换器名称数组，应用预设转换
+    if (Array.isArray(transform)) {
+      const transformer = createTransformer()
+      
+      for (const name of transform) {
+        switch (name) {
+          case 'trim':
+            transformer.trim()
+            break
+          case 'toLowerCase':
+            transformer.toLowerCase()
+            break
+          case 'toUpperCase':
+            transformer.toUpperCase()
+            break
+          case 'toNumber':
+            transformer.toNumber()
+            break
+          case 'toInteger':
+            transformer.toInteger()
+            break
+          case 'toFloat':
+            transformer.toFloat()
+            break
+          case 'toBoolean':
+            transformer.toBoolean()
+            break
+          case 'toDate':
+            transformer.toDate()
+            break
+          default:
+            console.warn(`Unknown transformer: ${name}`)
+        }
+      }
+
+      return transformer.transform(value)
+    }
+
+    return value
   }
 
   /**
@@ -167,6 +287,26 @@ export class SchemaValidator {
       }
     }
 
+    // 数组元素验证
+    if (rule.items && Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        const itemResult = await this.validateField(
+          `${field}[${i}]`,
+          value[i],
+          rule.items,
+          context
+        )
+        
+        if (!itemResult.valid) {
+          return {
+            valid: false,
+            message: rule.message || `数组元素 [${i}] 验证失败: ${itemResult.message}`,
+            code: itemResult.code || 'ARRAY_ITEM_INVALID',
+          }
+        }
+      }
+    }
+
     // 自定义验证器
     if (rule.validator) {
       const customResult = await rule.validator(value, context)
@@ -210,9 +350,46 @@ export class SchemaValidator {
 
 /**
  * 创建 Schema 验证器
+ * @param schema Schema 定义
+ * @param options 验证器选项
+ * @returns SchemaValidator 实例
+ * 
+ * @example
+ * ```typescript
+ * const schema = {
+ *   email: {
+ *     type: 'email',
+ *     required: true,
+ *     transform: ['trim', 'toLowerCase']
+ *   },
+ *   age: {
+ *     type: 'number',
+ *     min: 18,
+ *     max: 100,
+ *     default: 18
+ *   },
+ *   tags: {
+ *     type: 'array',
+ *     items: {
+ *       type: 'string',
+ *       minLength: 2
+ *     }
+ *   }
+ * }
+ * 
+ * const validator = createSchemaValidator(schema, {
+ *   autoTransform: true,
+ *   stopOnFirstError: false
+ * })
+ * 
+ * const result = await validator.validate({
+ *   email: '  USER@EXAMPLE.COM  ',
+ *   tags: ['vue', 'react', 'angular']
+ * })
+ * ```
  */
-export function createSchemaValidator(schema: Schema): SchemaValidator {
-  return new SchemaValidator(schema)
+export function createSchemaValidator(schema: Schema, options?: SchemaValidatorOptions): SchemaValidator {
+  return new SchemaValidator(schema, options)
 }
 
 
