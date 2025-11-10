@@ -93,7 +93,6 @@
     "build:watch": "ldesign-builder build --watch",
     "dev": "ldesign-builder build --mode development --watch",
     "clean": "rimraf es lib coverage",
-    "prepublishOnly": "pnpm run clean && pnpm run build",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
