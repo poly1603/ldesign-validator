@@ -29,6 +29,11 @@
       "import": "./es/index.js",
       "require": "./lib/index.cjs"
     },
+    "./adapters/*": {
+      "types": "./es/adapters/*.d.ts",
+      "import": "./es/adapters/*.js",
+      "require": "./lib/adapters/*.cjs"
+    },
     "./core": {
       "types": "./es/core/index.d.ts",
       "import": "./es/core/index.js",
@@ -85,8 +90,7 @@
     "LICENSE",
     "package.json",
     "es",
-    "lib",
-    "dist"
+    "lib"
   ],
   "scripts": {
     "build": "ldesign-builder build",
